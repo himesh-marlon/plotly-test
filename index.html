@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Canvas Graph Demo</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+      }
+
+      canvas {
+        border: 1px solid #ddd;
+        margin: 20px 0;
+        border-radius: 5px;
+      }
+
+      .controls {
+        text-align: center;
+        margin: 20px 0;
+      }
+
+      button {
+        background: #4caf50;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        margin: 0 5px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+      }
+
+      button:hover {
+        background: #45a049;
+      }
+
+      .info {
+        background: #e7f3ff;
+        padding: 15px;
+        border-left: 4px solid #2196f3;
+        margin: 20px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Interactive Canvas Graph</h1>
+
+      <div class="info">
+        <strong>Instructions:</strong> Hover over the bars to see values. Click
+        the buttons below to update the data!
+      </div>
+
+      <canvas id="graphCanvas" width="800" height="400"></canvas>
+
+      <div class="controls">
+        <button onclick="updateData('sales')">Sales Data</button>
+        <button onclick="updateData('revenue')">Revenue Data</button>
+        <button onclick="updateData('users')">User Growth</button>
+        <button onclick="animateGraph()">Animate</button>
+      </div>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("graphCanvas");
+      const ctx = canvas.getContext("2d");
+
+      // Data sets
+      const dataSets = {
+        sales: {
+          title: "Monthly Sales",
+          data: [120, 190, 300, 500, 200, 300, 450, 600, 750, 800, 650, 900],
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          color: "#4CAF50",
+        },
+        revenue: {
+          title: "Revenue (in thousands)",
+          data: [45, 68, 89, 123, 67, 89, 134, 178, 201, 234, 189, 267],
+          labels: [
+            "Q1-1",
+            "Q1-2",
+            "Q1-3",
+            "Q2-1",
+            "Q2-2",
+            "Q2-3",
+            "Q3-1",
+            "Q3-2",
+            "Q3-3",
+            "Q4-1",
+            "Q4-2",
+            "Q4-3",
+          ],
+          color: "#2196F3",
+        },
+        users: {
+          title: "User Growth",
+          data: [
+            1000, 1200, 1800, 2400, 2100, 2800, 3200, 3800, 4100, 4600, 5200,
+            5800,
+          ],
+          labels: [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec",
+          ],
+          color: "#FF9800",
+        },
+      };
+
+      let currentData = dataSets.sales;
+      let animationProgress = 1;
+
+      function drawGraph() {
+        // Clear canvas
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Graph dimensions
+        const padding = 60;
+        const graphWidth = canvas.width - 2 * padding;
+        const graphHeight = canvas.height - 2 * padding;
+
+        // Find max value for scaling
+        const maxValue = Math.max(...currentData.data);
+
+        // Draw title
+        ctx.fillStyle = "#333";
+        ctx.font = "bold 20px Arial";
+        ctx.textAlign = "center";
+        ctx.fillText(currentData.title, canvas.width / 2, 30);
+
+        // Draw axes
+        ctx.strokeStyle = "#ccc";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // Y-axis
+        ctx.moveTo(padding, padding);
+        ctx.lineTo(padding, canvas.height - padding);
+        // X-axis
+        ctx.lineTo(canvas.width - padding, canvas.height - padding);
+        ctx.stroke();
+
+        // Draw bars
+        const barWidth = graphWidth / currentData.data.length;
+        const barSpacing = barWidth * 0.8;
+        const barOffset = barWidth * 0.1;
+
+        currentData.data.forEach((value, index) => {
+          const barHeight =
+            (value / maxValue) * graphHeight * animationProgress;
+          const x = padding + index * barWidth + barOffset;
+          const y = canvas.height - padding - barHeight;
+
+          // Draw bar
+          ctx.fillStyle = currentData.color;
+          ctx.fillRect(x, y, barSpacing, barHeight);
+
+          // Draw value on top of bar
+          if (animationProgress > 0.8) {
+            ctx.fillStyle = "#333";
+            ctx.font = "12px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(value, x + barSpacing / 2, y - 5);
+          }
+
+          // Draw label
+          ctx.fillStyle = "#666";
+          ctx.font = "11px Arial";
+          ctx.textAlign = "center";
+          ctx.fillText(
+            currentData.labels[index],
+            x + barSpacing / 2,
+            canvas.height - padding + 20
+          );
+        });
+
+        // Draw Y-axis labels
+        ctx.fillStyle = "#666";
+        ctx.font = "11px Arial";
+        ctx.textAlign = "right";
+        for (let i = 0; i <= 5; i++) {
+          const value = Math.round((maxValue / 5) * i);
+          const y = canvas.height - padding - (graphHeight / 5) * i;
+          ctx.fillText(value, padding - 10, y + 3);
+
+          // Draw grid lines
+          if (i > 0) {
+            ctx.strokeStyle = "#f0f0f0";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(canvas.width - padding, y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      function updateData(dataSetKey) {
+        currentData = dataSets[dataSetKey];
+        animationProgress = 1;
+        drawGraph();
+      }
+
+      function animateGraph() {
+        animationProgress = 0;
+        const animate = () => {
+          animationProgress += 0.02;
+          if (animationProgress >= 1) {
+            animationProgress = 1;
+          } else {
+            requestAnimationFrame(animate);
+          }
+          drawGraph();
+        };
+        animate();
+      }
+
+      // Mouse hover effects
+      canvas.addEventListener("mousemove", (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        // Check if mouse is over a bar
+        const padding = 60;
+        const graphWidth = canvas.width - 2 * padding;
+        const barWidth = graphWidth / currentData.data.length;
+        const barSpacing = barWidth * 0.8;
+        const barOffset = barWidth * 0.1;
+
+        let hoveredBar = -1;
+        currentData.data.forEach((value, index) => {
+          const barX = padding + index * barWidth + barOffset;
+          const maxValue = Math.max(...currentData.data);
+          const barHeight = (value / maxValue) * (canvas.height - 2 * padding);
+          const barY = canvas.height - padding - barHeight;
+
+          if (
+            x >= barX &&
+            x <= barX + barSpacing &&
+            y >= barY &&
+            y <= canvas.height - padding
+          ) {
+            hoveredBar = index;
+          }
+        });
+
+        canvas.style.cursor = hoveredBar >= 0 ? "pointer" : "default";
+      });
+
+      // Initial draw
+      drawGraph();
+    </script>
+  </body>
+</html>
